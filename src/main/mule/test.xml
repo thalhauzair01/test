@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:hl7="http://www.mulesoft.org/schema/mule/hl7" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/hl7 http://www.mulesoft.org/schema/mule/hl7/current/mule-hl7.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="6f5d6910-22c2-4dca-ae0f-de1264984c10" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="cba68514-f258-44f4-9492-0c423da4405a" >
+		<salesforce:basic-connection username="thalhauzair786@gmail.com" password="haha@1234559" securityToken="MOIxu4DEq046KveaQDLVFiwv3" />
+	</salesforce:sfdc-config>
+	<flow name="testFlow" doc:id="db97a209-90fb-476f-adfb-10de5090e1eb" >
+		<http:listener doc:name="Listener" doc:id="e0b863bb-6c2c-4182-b146-4333302e339f" config-ref="HTTP_Listener_config" path="sf"/>
+		<set-variable value="#[attributes.queryParams.method]" doc:name="Set Variable" doc:id="72d2c317-0c55-461e-928e-e9e4579a002e" variableName="method"/>
+		<choice doc:name="Choice" doc:id="9ae9eb23-0193-4689-8a55-47e7a9a7270d" >
+			<when expression="#[vars.method=='get']">
+				<salesforce:query doc:name="Query" doc:id="1fbbd3c8-c138-4418-bf8e-7b70968f8a4f" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query><![CDATA[select Name,site,fax from Account]]></salesforce:salesforce-query>
+		</salesforce:query>
+				<ee:transform doc:name="Transform Message" doc:id="1b74db43-3ac2-4782-b2a9-7d16f50c2900">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+	payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<when expression="#[vars.method=='add']">
+				<salesforce:upsert doc:name="Upsert" doc:id="fa70b056-d9f1-4a0f-9595-ac85f490fac2" config-ref="Salesforce_Config" objectType="Account" externalIdFieldName="Id">
+				</salesforce:upsert>
+				<ee:transform doc:name="Transform Message" doc:id="f9a75b27-7385-4ed6-98ce-d4a485c50742" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+		</choice>
+	</flow>
+</mule>
